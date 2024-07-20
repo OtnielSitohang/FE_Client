@@ -1,3 +1,4 @@
+import 'package:client_front/services/ubahpassword_service.dart';
 import 'package:flutter/material.dart';
 import '../models/UserProvider.dart';
 import '../services/auth_service.dart';
@@ -13,7 +14,7 @@ void main() {
         ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         Provider<AuthService>(create: (_) => AuthService()),
-        // Provider<UbahPasswordService>(create: (_) => UbahPasswordService()),
+        Provider<UbahPasswordService>(create: (_) => UbahPasswordService()),
       ],
       child: MyApp(),
     ),
