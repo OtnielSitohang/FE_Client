@@ -40,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacementNamed(context, '/drawer', arguments: user);
         } else {
           setState(() {
-            _errorMessage = 'Only admin can login';
+            _errorMessage = 'Only Customer can login';
           });
         }
       } else {

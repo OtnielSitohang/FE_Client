@@ -5,6 +5,7 @@ import 'package:client_front/pages/login_page.dart';
 import 'package:flutter/material.dart';
 
 import 'pages/PengaturanAkunPage .dart';
+import 'pages/PilihJenisLapanganScreen.dart';
 import 'pages/pengaturan_page.dart';
 import 'pages/ubah_password_page.dart';
 
@@ -24,6 +25,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => PengaturanAkunPage());
       case '/ubahpassword':
         return MaterialPageRoute(builder: (_) => UbahPasswordPage());
+      case '/pilihjenis':
+        return MaterialPageRoute(builder: (_) => PilihJenisLapanganScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

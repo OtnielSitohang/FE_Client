@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:client_front/Global/url.dart';
 import 'package:http/http.dart' as http;
 
 class ApiResponse {
@@ -24,9 +25,6 @@ class ApiResponse {
 enum Status { SUCCESS, ERROR }
 
 class UbahPasswordService {
-  static const String baseUrl =
-      'http://localhost:3000/auth'; // Ganti dengan URL backend Anda
-
   Future<ApiResponse> ubahPassword(
       int userId, String oldPassword, String newPassword) async {
     try {

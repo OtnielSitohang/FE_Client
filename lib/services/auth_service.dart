@@ -1,15 +1,13 @@
 import 'dart:convert';
 import 'package:client_front/models/user.dart';
+import 'package:client_front/utils/DateUtils.dart';
 import 'package:http/http.dart' as http;
+import '../global/url.dart';
 
 class AuthService {
-  final String _baseUrl = 'http://localhost:3000/auth';
-
   Future<User?> login(String username, String password) async {
     try {
-      final url = Uri.parse('$_baseUrl/login');
-      print('URL: $url');
-
+      final url = Uri.parse('$baseUrl/login');
       final response = await http.post(
         url,
         headers: <String, String>{'Content-Type': 'application/json'},
@@ -41,21 +39,24 @@ class AuthService {
   Future<Map<String, dynamic>?> updateProfile(User updatedUser) async {
     try {
       final response = await http.put(
-        Uri.parse('$_baseUrl/pengguna/${updatedUser.id}'),
+        Uri.parse('$baseUrl/pengguna/${updatedUser.id}'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(updatedUser.toJson()),
+        body: jsonEncode({
+          'foto_base64': updatedUser.foto_base64,
+          'email': updatedUser.email,
+          'tempat_tinggal': updatedUser.tempat_tinggal,
+          'tanggal_lahir': DateUtils.formatDateTime(updatedUser.tanggal_lahir),
+        }),
       );
 
       print('Update Profile Response status: ${response.statusCode}');
       print('Update Profile Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        // Parse the response body
         final responseData = jsonDecode(response.body);
 
-        // Check if responseData contains 'data' field
         if (responseData['data'] != null) {
           return responseData['data'];
         } else {

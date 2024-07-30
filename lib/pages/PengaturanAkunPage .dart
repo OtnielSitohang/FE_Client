@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:io'; // Import this for handling File
+import 'dart:typed_data';
+import 'package:client_front/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../components/ConfirmationDialog.dart';
 import '../components/EditableField.dart';
 import '../models/user.dart';
@@ -16,12 +22,15 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
   late TextEditingController _tempatTinggalController;
   bool _isEmailEdited = false;
   bool _isTempatTinggalEdited = false;
+  late AuthService _authService; // Add AuthService instance
+  XFile? _selectedImage;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController();
     _tempatTinggalController = TextEditingController();
+    _authService = AuthService(); // Initialize AuthService
 
     WidgetsBinding.instance!.addPostFrameCallback((_) {
       final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -35,6 +44,95 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
         });
       }
     });
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 100,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedImage = image;
+      });
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 100,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedImage = image;
+      });
+    }
+  }
+
+  void _showImagePickerOptions() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Pilih Sumber Gambar'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _pickImage();
+              },
+              child: Text('Pilih dari Galeri'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _takePhoto();
+              },
+              child: Text('Ambil Foto'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentUser = userProvider.user;
+
+    if (currentUser == null || _selectedImage == null) return;
+
+    try {
+      final file = File(_selectedImage!.path);
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final updatedUser = currentUser.copyWith(foto_base64: base64Image);
+      await _authService.updateProfile(updatedUser);
+
+      userProvider.setUser(updatedUser);
+
+      // Refresh the UI or show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Foto profil berhasil diperbarui')),
+      );
+    } catch (e) {
+      print('Gagal mengupdate foto profil: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengupdate foto profil')),
+      );
+    }
   }
 
   void _showConfirmationDialog() {
@@ -71,7 +169,6 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
       return;
     }
 
-    // Create updatedUser object only with changed fields
     User updatedUser;
     if (updatedEmail.isNotEmpty && updatedTempatTinggal.isNotEmpty) {
       updatedUser = currentUser.copyWith(
@@ -144,6 +241,15 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
+    String? base64String = user?.foto_base64;
+
+    Uint8List? imageBytes;
+    try {
+      imageBytes = base64Decode(base64String ?? "");
+    } catch (e) {
+      print('Error decoding base64: $e');
+    }
+
     if (user == null) {
       return Scaffold(
         appBar: AppBar(
@@ -160,14 +266,16 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
       body: ListView(
         padding: EdgeInsets.all(16),
         children: [
-          // Avatar with Image Selection Options (To be implemented)
           GestureDetector(
-            onTap: () {
-              // Implement image selection logic
-            },
+            onTap: _showImagePickerOptions, // Show image picker options
             child: CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/default_avatar.png'),
+              backgroundImage:
+                  imageBytes != null ? MemoryImage(imageBytes) : null,
+              child: imageBytes == null
+                  ? Icon(Icons.person,
+                      size: 50) // Placeholder jika gambar tidak tersedia
+                  : null,
             ),
           ),
           SizedBox(height: 16),
@@ -220,7 +328,10 @@ class _PengaturanAkunPageState extends State<PengaturanAkunPage> {
           ),
           SizedBox(height: 32),
           ElevatedButton(
-            onPressed: _showConfirmationDialog,
+            onPressed: () async {
+              await _uploadProfilePicture(); // Upload profile picture before saving
+              _showConfirmationDialog();
+            },
             child: Text('Simpan Perubahan'),
           ),
         ],

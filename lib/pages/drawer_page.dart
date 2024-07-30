@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+
+import 'package:client_front/pages/PilihJenisLapanganScreen.dart';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../pages/dashboard_client.dart';
 import '../pages/pengaturan_page.dart';
+import 'dart:convert';
 
 class DrawerPage extends StatefulWidget {
   final User user;
@@ -28,9 +32,14 @@ class _DrawerPageState extends State<DrawerPage> {
           Navigator.pushReplacementNamed(context, '/dashboardClient');
         }
         break;
-
       case 1:
         if (_selectedIndex != 1) {
+          Navigator.pushReplacementNamed(context, '/pilihjenis');
+        }
+        break;
+
+      case 2:
+        if (_selectedIndex != 2) {
           Navigator.pushReplacementNamed(context, '/pengaturan');
         }
         break;
@@ -66,6 +75,16 @@ class _DrawerPageState extends State<DrawerPage> {
 
   @override
   Widget build(BuildContext context) {
+    String? base64String = widget.user.foto_base64;
+
+    // Decode base64 string menjadi Uint8List
+    Uint8List? imageBytes;
+    try {
+      imageBytes = base64Decode(base64String ?? "");
+    } catch (e) {
+      print('Error decoding base64: $e');
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Client Dashboard'),
@@ -78,6 +97,12 @@ class _DrawerPageState extends State<DrawerPage> {
               accountEmail: Text(widget.user.email),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
+                backgroundImage:
+                    imageBytes != null ? MemoryImage(imageBytes) : null,
+                child: imageBytes == null
+                    ? Icon(Icons.person,
+                        size: 50) // Placeholder jika gambar tidak tersedia
+                    : null,
               ),
             ),
             ListTile(
@@ -86,9 +111,14 @@ class _DrawerPageState extends State<DrawerPage> {
               onTap: () => _onItemTapped(0),
             ),
             ListTile(
+              leading: Icon(Icons.sports),
+              title: Text('Booking'),
+              onTap: () => _onItemTapped(1),
+            ),
+            ListTile(
               leading: Icon(Icons.settings),
               title: Text('Pengaturan'),
-              onTap: () => _onItemTapped(1),
+              onTap: () => _onItemTapped(2),
             ),
             Divider(),
             ListTile(
@@ -103,6 +133,7 @@ class _DrawerPageState extends State<DrawerPage> {
         index: _selectedIndex,
         children: [
           DashboardClient(),
+          PilihJenisLapanganScreen(),
           PengaturanPage(),
         ],
       ),
