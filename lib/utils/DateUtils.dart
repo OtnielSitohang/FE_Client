@@ -18,7 +18,6 @@ class DateUtils {
 
   static bool isDateValid(DateTime date) {
     try {
-      // Ensure the parsed date is valid and does not exceed the maximum days in the month
       int daysInMonth = DateTime(date.year, date.month + 1, 0).day;
       return date.day <= daysInMonth;
     } catch (e) {
@@ -31,7 +30,7 @@ class DateUtils {
   }
 
   static String formattedDate(DateTime dateTime) {
-    return '${dateTime.day} ${_getMonthName(dateTime.month)} ${dateTime.year}';
+    return '${_getDayName(dateTime.weekday)}, ${dateTime.day} ${_getMonthName(dateTime.month)} ${dateTime.year}';
   }
 
   static String _getMonthName(int month) {
@@ -60,6 +59,27 @@ class DateUtils {
         return 'November';
       case 12:
         return 'Desember';
+      default:
+        return '';
+    }
+  }
+
+  static String _getDayName(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return 'Senin';
+      case DateTime.tuesday:
+        return 'Selasa';
+      case DateTime.wednesday:
+        return 'Rabu';
+      case DateTime.thursday:
+        return 'Kamis';
+      case DateTime.friday:
+        return 'Jumat';
+      case DateTime.saturday:
+        return 'Sabtu';
+      case DateTime.sunday:
+        return 'Minggu';
       default:
         return '';
     }

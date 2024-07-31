@@ -1,11 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:client_front/pages/PilihJenisLapanganScreen.dart';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../pages/dashboard_client.dart';
 import '../pages/pengaturan_page.dart';
 import 'dart:convert';
+
+import 'PilihJenisLapanganScreen.dart';
 
 class DrawerPage extends StatefulWidget {
   final User user;
@@ -87,7 +88,7 @@ class _DrawerPageState extends State<DrawerPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Client Dashboard'),
+        title: Text('Client Site'),
       ),
       drawer: Drawer(
         child: Column(

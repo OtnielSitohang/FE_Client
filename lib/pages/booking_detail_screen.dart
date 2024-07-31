@@ -134,7 +134,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 Text('Jenis Lapangan ID: ${widget.jenisLapanganId}',
                     style: TextStyle(fontSize: 18.0)),
                 Text(
-                    'Tanggal Booking: ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}',
+                    'Tanggal Booking: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
                     style: TextStyle(fontSize: 18.0)),
                 Text('Tanggal Penggunaan: ${widget.tanggalPenggunaan}',
                     style: TextStyle(fontSize: 18.0)),
@@ -303,7 +303,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       lapangan_id: widget.lapanganId,
                       jenis_lapangan_id: widget.jenisLapanganId,
                       tanggal_booking:
-                          DateFormat('yyyy-MM-dd').format(widget.selectedDate),
+                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       tanggal_penggunaan: widget.tanggalPenggunaan,
                       sesi: widget.selectedSesi,
                       harga: double.parse(widget.harga),
@@ -314,13 +314,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     );
 
                     if (currentUser != null) {
-                      Navigator.pushReplacementNamed(
+                      Navigator.pushNamedAndRemoveUntil(
                         context,
                         '/drawer',
+                        (Route<dynamic> route) =>
+                            false, // This removes all previous routes
                         arguments: currentUser,
                       );
                     } else {
-                      // Handle case when user data is not available
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('User data not available')),
                       );

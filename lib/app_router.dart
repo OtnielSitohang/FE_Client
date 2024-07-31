@@ -1,13 +1,12 @@
-import 'package:client_front/models/user.dart';
-import 'package:client_front/pages/dashboard_client.dart';
-import 'package:client_front/pages/drawer_page.dart';
-import 'package:client_front/pages/login_page.dart';
+import 'package:client_front/pages/PengaturanAkunPage%20.dart';
+import 'package:client_front/pages/PilihJenisLapanganScreen.dart';
 import 'package:flutter/material.dart';
-
-import 'pages/PengaturanAkunPage .dart';
-import 'pages/PilihJenisLapanganScreen.dart';
+import 'pages/dashboard_client.dart';
+import 'pages/drawer_page.dart';
+import 'pages/login_page.dart';
 import 'pages/pengaturan_page.dart';
 import 'pages/ubah_password_page.dart';
+import 'models/user.dart'; // Pastikan path sesuai
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -17,7 +16,7 @@ class AppRouter {
       case '/drawer':
         final user = settings.arguments as User;
         return MaterialPageRoute(builder: (_) => DrawerPage(user: user));
-      case '/dashboardAdmin':
+      case '/dashboardClient':
         return MaterialPageRoute(builder: (_) => DashboardClient());
       case '/pengaturan':
         return MaterialPageRoute(builder: (_) => PengaturanPage());

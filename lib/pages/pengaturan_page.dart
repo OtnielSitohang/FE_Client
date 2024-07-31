@@ -37,13 +37,13 @@ class PengaturanPage extends StatelessWidget {
             },
           ),
 
-          ListTile(
-            leading: Icon(Icons.notifications),
-            title: Text('Notifikasi'),
-            onTap: () {
-              // Add navigation to the notification settings page here
-            },
-          ),
+          // ListTile(
+          //   leading: Icon(Icons.notifications),
+          //   title: Text('Notifikasi'),
+          //   onTap: () {
+          //     // Add navigation to the notification settings page here
+          //   },
+          // ),
           // Add other settings here
         ],
       ),
