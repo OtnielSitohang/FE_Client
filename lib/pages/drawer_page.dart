@@ -25,7 +25,7 @@ class _DrawerPageState extends State<DrawerPage> {
       _selectedIndex = index;
     });
 
-    Navigator.pop(context); // Close the drawer
+    Navigator.pop(context); 
 
     switch (index) {
       case 0:

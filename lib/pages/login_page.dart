@@ -27,6 +27,15 @@ class _LoginPageState extends State<LoginPage> {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
+    // Validasi username dan password
+    if (username.isEmpty || password.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Username dan Password harus diisi';
+      });
+      return;
+    }
+
     try {
       final user = await _authService.login(username, password);
 
@@ -69,14 +78,20 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/icon.jpg', height: 100, width: 100),
+            SizedBox(height: 20),
             TextField(
               controller: _usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
+              decoration: InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
             ),
+            SizedBox(height: 10),
             TextField(
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
+                border: OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscureText ? Icons.visibility : Icons.visibility_off,
@@ -98,6 +113,10 @@ class _LoginPageState extends State<LoginPage> {
                         ? null
                         : _login, // Disable button if isLoading is true
                     child: Text('Login'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      textStyle: TextStyle(fontSize: 16),
+                    ),
                   ),
             if (_errorMessage != null) ...[
               SizedBox(height: 20),
@@ -105,7 +124,38 @@ class _LoginPageState extends State<LoginPage> {
                 _errorMessage!,
                 style: TextStyle(color: Colors.red),
               ),
-            ]
+            ],
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/register');
+                  },
+                  child: Text('Register'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue, // Text color
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                ),
+                SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/forgot-password');
+                  },
+                  child: Text('Forgot Password?'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.grey, // Text color
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

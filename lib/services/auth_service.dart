@@ -70,4 +70,34 @@ class AuthService {
       throw Exception('Failed to update profile: $e');
     }
   }
+
+  Future<void> register(
+    String username,
+    String password,
+    String namaLengkap,
+    String email,
+    String tempatTinggal,
+    DateTime tanggalLahir,
+  ) async {
+    final url = Uri.parse('$baseUrl/register');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+        'nama_lengkap': namaLengkap,
+        'email': email,
+        'tempat_tinggal': tempatTinggal,
+        'tanggal_lahir': tanggalLahir.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Failed to register');
+    }
+  }
 }

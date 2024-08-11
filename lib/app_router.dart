@@ -1,5 +1,6 @@
 import 'package:client_front/pages/PengaturanAkunPage%20.dart';
 import 'package:client_front/pages/PilihJenisLapanganScreen.dart';
+import 'package:client_front/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'pages/dashboard_client.dart';
 import 'pages/drawer_page.dart';
@@ -13,6 +14,8 @@ class AppRouter {
     switch (settings.name) {
       case '/':
         return MaterialPageRoute(builder: (_) => LoginPage());
+      case '/register':
+        return MaterialPageRoute(builder: (_) => RegisterPage());
       case '/drawer':
         final user = settings.arguments as User;
         return MaterialPageRoute(builder: (_) => DrawerPage(user: user));
