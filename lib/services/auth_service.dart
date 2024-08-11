@@ -101,3 +101,42 @@ class AuthService {
     }
   }
 }
+
+
+
+class PasswordService {
+ 
+  // Verifikasi pengguna
+  static Future<Map<String, dynamic>> verifyUser(String username, String email) async {
+    final url = Uri.parse('$baseUrl/check-user');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'email': email}),
+    );
+
+    if (response.statusCode == 200) {
+      return {'success': true};
+    } else {
+      final responseBody = jsonDecode(response.body);
+      return {'success': false, 'message': responseBody['message']};
+    }
+  }
+
+  // Mengganti password
+  static Future<Map<String, dynamic>> changePassword(String username, String email, String newPassword) async {
+    final url = Uri.parse('$baseUrl/change-password');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'email': email, 'newPassword': newPassword}),
+    );
+
+    if (response.statusCode == 200) {
+      return {'success': true};
+    } else {
+      final responseBody = jsonDecode(response.body);
+      return {'success': false, 'message': responseBody['message']};
+    }
+  }
+}
