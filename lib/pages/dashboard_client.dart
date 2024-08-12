@@ -1,5 +1,6 @@
 import 'package:client_front/Global/url.dart';
 import 'package:client_front/models/UserProvider.dart';
+import 'package:client_front/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/dashboard_service.dart';
@@ -39,14 +40,19 @@ class _DashboardClientState extends State<DashboardClient> {
     });
   }
 
-  Future<void> _launchWhatsApp(String phoneNumber) async {
-    final url = 'https://wa.me/$phoneNumber';
+  Future<void> _launchWhatsApp(String phoneNumber, String userName,
+      String fieldName, String session) async {
+    // Construct the message with user details
+    final message =
+        'Halo Admin, saya ${userName} ingin menanyakan mengenai booking lapangan ${fieldName} pada sesi ${session}. Mohon informasi lebih lanjut.';
+    final Uri url = Uri.parse(
+        'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
     try {
-      if (await canLaunch(url)) {
-        await launch(url);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch WhatsApp.')),
+          SnackBar(content: Text('Could not launch WhatsApp. URL: $url')),
         );
       }
     } catch (e) {
@@ -284,9 +290,16 @@ class _DashboardClientState extends State<DashboardClient> {
                       SizedBox(height: 16),
 
                       // Hubungi Admin Button
+                      // Assuming these details are available in your booking item
+
+// Hubungi Admin Button
                       if (canContactAdmin)
                         ElevatedButton(
-                          onPressed: () => _launchWhatsApp('+6282268449779'),
+                          onPressed: () => _launchWhatsApp(
+                              '+6282268449779',
+                              booking['nama_user'],
+                              booking['nama_lapangan'],
+                              booking['sesi']),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

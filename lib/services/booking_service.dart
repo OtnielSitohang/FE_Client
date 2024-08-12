@@ -1,7 +1,4 @@
-// lib/services/api_service.dart
-
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../models/jenis_lapangan.dart';
 import '../models/lapangan.dart';
@@ -30,24 +27,25 @@ class ApiService {
     required String tanggal_booking,
     required String tanggal_penggunaan,
     required String sesi,
-    required String foto_base64,
     required double harga,
+    required String foto_base64,
+    required voucher_id, // voucher_id sekarang opsional
   }) async {
-    final url = Uri.parse('$baseUrl/lapangan/book');
     final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
+      Uri.parse('$baseUrl/lapangan/book'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: jsonEncode({
+      body: jsonEncode(<String, dynamic>{
         'pengguna_id': pengguna_id,
         'lapangan_id': lapangan_id,
         'jenis_lapangan_id': jenis_lapangan_id,
         'tanggal_booking': tanggal_booking,
         'tanggal_penggunaan': tanggal_penggunaan,
         'sesi': sesi,
-        'foto_base64': foto_base64,
         'harga': harga,
+        'foto_base64': foto_base64,
+        'voucher_id': voucher_id, // Kirim voucher_id jika ada
       }),
     );
 
@@ -82,6 +80,47 @@ class ApiService {
       return lapangans;
     } else {
       throw Exception('Failed to fetch available lapangan');
+    }
+  }
+
+  // Method untuk mengecek voucher code
+  static Future<Map<String, dynamic>> checkVoucherCode(
+      String voucherCode) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/voucher/check'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'voucher_code': voucherCode,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to check voucher code');
+    }
+  }
+
+  // Method untuk mengklaim voucher
+  static Future<void> claimVoucher({
+    required String voucherCode,
+    required int penggunaId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/voucher/klaim'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'voucher_code': voucherCode,
+        'pengguna_id': penggunaId,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to claim voucher');
     }
   }
 }

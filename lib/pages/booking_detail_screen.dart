@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'package:client_front/models/UserProvider.dart';
+import 'package:client_front/services/booking_service.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import image_picker
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../models/jenis_lapangan.dart';
 import '../models/user.dart';
-import 'package:client_front/services/booking_service.dart';
 import 'package:provider/provider.dart';
+import 'package:client_front/models/UserProvider.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final JenisLapangan jenisLapangan;
@@ -39,6 +39,15 @@ class BookingDetailScreen extends StatefulWidget {
 class _BookingDetailScreenState extends State<BookingDetailScreen> {
   String? _fotoBase64;
   String? _selectedPaymentMethod;
+  String? _voucherCode;
+  bool _isVoucherValid = false;
+  bool _isVoucherClaimed = false;
+  double _discount = 0.0;
+  int? _voucherId;
+
+  double get _finalPrice => _isVoucherClaimed
+      ? double.parse(widget.harga) - _discount
+      : double.parse(widget.harga);
 
   final List<String> _paymentMethods = [
     'BNI',
@@ -116,46 +125,150 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
   }
 
-  void _showFullScreenInfo() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Pengguna ID: ${widget.penggunaId}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text('Lapangan ID: ${widget.lapanganId}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text('Jenis Lapangan ID: ${widget.jenisLapanganId}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text(
-                    'Tanggal Booking: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text('Tanggal Penggunaan: ${widget.tanggalPenggunaan}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text('Sesi: ${widget.selectedSesi}',
-                    style: TextStyle(fontSize: 18.0)),
-                Text('Harga: ${widget.harga}',
-                    style: TextStyle(fontSize: 18.0)),
-                SizedBox(height: 16.0),
-              ],
-            ),
-          ),
+  Future<void> _checkVoucher() async {
+    if (_voucherCode != null && _voucherCode!.isNotEmpty) {
+      try {
+        final response = await ApiService.checkVoucherCode(_voucherCode!);
+        if (response['valid'] == true) {
+          setState(() {
+            _isVoucherValid = true;
+            _discount = (response['discount'] is int
+                ? (response['discount'] as int).toDouble()
+                : response['discount']) as double;
+            _voucherId = response['voucher_id']; // Set voucher_id
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Voucher is valid')),
+          );
+        } else {
+          setState(() {
+            _isVoucherValid = false;
+            _discount = 0.0; // Reset discount if invalid
+            _voucherId = 0; // Reset voucher_id
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Voucher is invalid or expired')),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isVoucherValid = false;
+          _discount = 0.0;
+          _voucherId = 0; // Reset voucher_id
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to check voucher: $e')),
         );
-      },
+      }
+    }
+  }
+
+  Future<void> _claimVoucher() async {
+    if (_voucherCode != null &&
+        _voucherCode!.isNotEmpty &&
+        _isVoucherValid &&
+        !_isVoucherClaimed) {
+      try {
+        await ApiService.claimVoucher(
+            voucherCode: _voucherCode!, penggunaId: widget.penggunaId);
+        setState(() {
+          _isVoucherClaimed = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Voucher claimed successfully')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to claim voucher: $e')),
+        );
+      }
+    }
+  }
+
+  void _showDetails() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Detail Booking'),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Tanggal Penggunaan: ${widget.tanggalPenggunaan}'),
+            Text('Sesi: ${widget.selectedSesi}'),
+            Text('Nama Lapangan: ${widget.jenisLapangan.nama}'),
+            Text(
+                'Harga Awal: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(double.parse(widget.harga))}'),
+            Text(
+                'Diskon: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(_discount)}'),
+            Text(
+                'Harga Akhir: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(_finalPrice)}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Tutup'),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _bookField() async {
+    if (_fotoBase64 == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please upload the payment proof')),
+      );
+      return;
+    }
+
+    try {
+      // Optionally claim voucher if it's valid and not claimed yet
+      if (_isVoucherValid && !_isVoucherClaimed) {
+        await _claimVoucher();
+      }
+
+      await ApiService.bookField(
+        pengguna_id: widget.penggunaId,
+        lapangan_id: widget.lapanganId,
+        jenis_lapangan_id: widget.jenisLapanganId,
+        tanggal_booking: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        tanggal_penggunaan: widget.tanggalPenggunaan,
+        sesi: widget.selectedSesi,
+        harga: _finalPrice,
+        foto_base64: _fotoBase64!,
+        voucher_id: _voucherId,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Booking successful!')),
+      );
+
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final User? currentUser = userProvider.user;
+
+      if (currentUser != null) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/drawer',
+          (Route<dynamic> route) => false,
+          arguments: currentUser,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User data not available')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to create booking: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final User? currentUser = userProvider.user;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Detail Booking'),
@@ -197,8 +310,59 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       height: 200.0,
                     ),
                   ),
+                  SizedBox(height: 8.0),
+                  Text(
+                    'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ').format(_finalPrice)}',
+                    style:
+                        TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
+            ),
+            SizedBox(height: 16.0),
+            Text('Kode Voucher (Opsional):', style: TextStyle(fontSize: 18.0)),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        _voucherCode = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Masukkan kode voucher',
+                    ),
+                    enabled: !_isVoucherClaimed,
+                  ),
+                ),
+                SizedBox(width: 8.0),
+                if (!_isVoucherClaimed) ...[
+                  ElevatedButton(
+                    onPressed: _checkVoucher,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    child: Text('Cek Voucher'),
+                  ),
+                  SizedBox(width: 8.0),
+                  if (_isVoucherValid)
+                    ElevatedButton(
+                      onPressed: _claimVoucher,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      ),
+                      child: Text('Klaim Voucher'),
+                    ),
+                  if (!_isVoucherValid)
+                    Text('Voucher tidak tersedia',
+                        style: TextStyle(color: Colors.red)),
+                ]
+              ],
             ),
             SizedBox(height: 16.0),
             Text('Metode Pembayaran:', style: TextStyle(fontSize: 18.0)),
@@ -272,66 +436,25 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 ),
               ),
             SizedBox(height: 16.0),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: _showFullScreenInfo,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: _showDetails,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                  ),
+                  child: Text('Informasi Detail'),
                 ),
-                child: Text('Lihat Detail'),
-              ),
+              ],
             ),
             SizedBox(height: 16.0),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
-                onPressed: () async {
-                  if (_fotoBase64 == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Please upload the payment proof')),
-                    );
-                    return;
-                  }
-
-                  try {
-                    await ApiService.bookField(
-                      pengguna_id: widget.penggunaId,
-                      lapangan_id: widget.lapanganId,
-                      jenis_lapangan_id: widget.jenisLapanganId,
-                      tanggal_booking:
-                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                      tanggal_penggunaan: widget.tanggalPenggunaan,
-                      sesi: widget.selectedSesi,
-                      harga: double.parse(widget.harga),
-                      foto_base64: _fotoBase64!,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Booking successful!')),
-                    );
-
-                    if (currentUser != null) {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/drawer',
-                        (Route<dynamic> route) =>
-                            false, // This removes all previous routes
-                        arguments: currentUser,
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('User data not available')),
-                      );
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to create booking: $e')),
-                    );
-                  }
-                },
+                onPressed: _bookField,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   padding:
